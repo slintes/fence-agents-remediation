@@ -16,8 +16,6 @@ limitations under the License.
 
 package controllers
 
-//TODO mshitrit make sure fence agents and other necessary executables are installed in the pod
-
 import (
 	"context"
 	"fmt"
@@ -26,8 +24,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/medik8s/fence-agents-remediation/api/v1alpha1"
 	"github.com/medik8s/fence-agents-remediation/pkg/cli"
+
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,8 +45,16 @@ var (
 // FenceAgentsRemediationReconciler reconciles a FenceAgentsRemediation object
 type FenceAgentsRemediationReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log          logr.Logger
+	Scheme       *runtime.Scheme
+	ExecutorHook func(*corev1.Pod) (cli.Executer, error) // for testing the cli command
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *FenceAgentsRemediationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1alpha1.FenceAgentsRemediation{}).
+		Complete(r)
 }
 
 //+kubebuilder:rbac:groups=core,resources=pods/exec,verbs=create
@@ -93,7 +99,7 @@ func (r *FenceAgentsRemediationReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, err
 	}
 
-	ex, err := cli.NewExecuter(pod)
+	ex, err := r.ExecutorHook(pod)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -108,28 +114,7 @@ func (r *FenceAgentsRemediationReconciler) Reconcile(ctx context.Context, req ct
 	return ctrl.Result{}, nil
 }
 
-func buildFenceAgentParams(farTemplate *v1alpha1.FenceAgentsRemediationTemplate, far *v1alpha1.FenceAgentsRemediation) []string {
-	var fenceAgentParams []string
-	for paramName, paramVal := range farTemplate.Spec.SharedParameters {
-		fenceAgentParams = appendParamToSlice(fenceAgentParams, string(paramName), paramVal)
-
-	}
-
-	nodeName := v1alpha1.NodeName(far.Name)
-	for paramName, nodeMap := range farTemplate.Spec.NodeParameters {
-		fenceAgentParams = appendParamToSlice(fenceAgentParams, string(paramName), nodeMap[nodeName])
-	}
-
-	return fenceAgentParams
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *FenceAgentsRemediationReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.FenceAgentsRemediation{}).
-		Complete(r)
-}
-
+// getFAPod fetches the FAR pod based on FAR's label and namespace
 func (r *FenceAgentsRemediationReconciler) getFAPod(namespace string) (*corev1.Pod, error) {
 
 	pods := new(corev1.PodList)
@@ -146,7 +131,7 @@ func (r *FenceAgentsRemediationReconciler) getFAPod(namespace string) (*corev1.P
 	}
 	if len(pods.Items) == 0 {
 		r.Log.Info("No Fence Agent pods were found")
-		podNotFoundErr := &errors.StatusError{ErrStatus: metav1.Status{
+		podNotFoundErr := &apiErrors.StatusError{ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusNotFound,
 			Reason: metav1.StatusReasonNotFound,

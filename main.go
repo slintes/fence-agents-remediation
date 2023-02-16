@@ -24,6 +24,8 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/medik8s/fence-agents-remediation/pkg/cli"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -79,9 +81,10 @@ func main() {
 	}
 
 	if err = (&controllers.FenceAgentsRemediationReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("FenceAgentsRemediation"),
-		Scheme: mgr.GetScheme(),
+		Client:       mgr.GetClient(),
+		Log:          ctrl.Log.WithName("controllers").WithName("FenceAgentsRemediation"),
+		Scheme:       mgr.GetScheme(),
+		ExecutorHook: func(pod *corev1.Pod) (cli.Executer, error) { return cli.NewExecuter(pod) },
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "FenceAgentsRemediation")
 		os.Exit(1)
