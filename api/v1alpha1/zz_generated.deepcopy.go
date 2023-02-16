@@ -178,14 +178,14 @@ func (in *FenceAgentsRemediationTemplateSpec) DeepCopyInto(out *FenceAgentsRemed
 	*out = *in
 	if in.SharedParameters != nil {
 		in, out := &in.SharedParameters, &out.SharedParameters
-		*out = make(map[parameterName]string, len(*in))
+		*out = make(map[ParameterName]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
 	if in.NodeParameters != nil {
 		in, out := &in.NodeParameters, &out.NodeParameters
-		*out = make(map[parameterName]map[NodeName]string, len(*in))
+		*out = make(map[ParameterName]map[NodeName]string, len(*in))
 		for key, val := range *in {
 			var outVal map[NodeName]string
 			if val == nil {

@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type parameterName string
+type ParameterName string
 type NodeName string
 
 // FenceAgentsRemediationTemplateSpec defines the desired state of FenceAgentsRemediationTemplate
@@ -35,10 +35,10 @@ type FenceAgentsRemediationTemplateSpec struct {
 	Agent string `json:"agent"`
 
 	// SharedParameters are passed to the fencing agent no matter which node is fenced (i.e they are common for all the nodes)
-	SharedParameters map[parameterName]string `json:"sharedparameters,omitempty"`
+	SharedParameters map[ParameterName]string `json:"sharedparameters,omitempty"`
 
 	// NodeParameters are node specific they are passed to the fencing agent according to the node that is fenced
-	NodeParameters map[parameterName]map[NodeName]string `json:"nodeparameters,omitempty"`
+	NodeParameters map[ParameterName]map[NodeName]string `json:"nodeparameters,omitempty"`
 }
 
 // FenceAgentsRemediationTemplateStatus defines the observed state of FenceAgentsRemediationTemplate
