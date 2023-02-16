@@ -11,6 +11,11 @@ OPM_VERSION ?= v1.26.2
 # See github.com/operator-framework/operator-sdk/releases for the last version
 OPERATOR_SDK_VERSION ?= v1.26.0
 
+# See https://github.com/onsi/ginkgo/releases for the last version
+GINKGO_VERSION ?= v1.16.5
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.23
+
 # IMAGE_REGISTRY used to indicate the registery/group for the operator, bundle and catalog
 IMAGE_REGISTRY ?= quay.io/medik8s
 export IMAGE_REGISTRY
@@ -88,9 +93,6 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 	BUNDLE_GEN_FLAGS += --use-image-digests
 endif
 
-# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.23
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -162,7 +164,7 @@ go-verify: go-tidy go-vendor # Run go mod verify - verify dependencies have expe
 
 .PHONY: test
 test: manifests generate go-verify fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -i --bin-dir $(LOCALBIN) -p path)"  $(GINKGO) -v -r --keepGoing -requireSuite -coverprofile cover.out
 
 ##@ Build
 
@@ -229,6 +231,7 @@ $(LOCALBIN):
 KUSTOMIZE_DIR ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN_DIR ?= $(LOCALBIN)/controller-gen
 ENVTEST_DIR ?= $(LOCALBIN)/setup-envtest
+GINKGO_DIR ?= $(LOCALBIN)/ginkgo
 OPM_DIR = $(LOCALBIN)/opm
 OPERATOR_SDK_DIR ?= $(LOCALBIN)/operator-sdk
 
@@ -236,6 +239,7 @@ OPERATOR_SDK_DIR ?= $(LOCALBIN)/operator-sdk
 KUSTOMIZE = $(KUSTOMIZE_DIR)/$(KUSTOMIZE_VERSION)/kustomize
 CONTROLLER_GEN = $(CONTROLLER_GEN_DIR)/$(CONTROLLER_GEN_VERSION)/controller-gen
 ENVTEST = $(ENVTEST_DIR)/$(ENVTEST_VERSION)/setup-envtest
+GINKGO = $(GINKGO_DIR)/$(GINKGO_VERSION)/ginkgo
 OPM = $(OPM_DIR)/$(OPM_VERSION)/opm
 OPERATOR_SDK = $(OPERATOR_SDK_DIR)/$(OPERATOR_SDK_VERSION)/operator-sdk
 
@@ -247,9 +251,13 @@ kustomize: ## Download kustomize locally if necessary.
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),$(CONTROLLER_GEN_DIR),sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERSION})
 
-.PHONY: envtest
+.PHONY: envtest ## This library helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-install-tool,$(ENVTEST),$(ENVTEST_DIR),sigs.k8s.io/controller-runtime/tools/setup-envtest@${ENVTEST_VERSION})
+
+.PHONY: ginkgo
+ginkgo: ## Download ginkgo locally if necessary.
+	$(call go-install-tool,$(GINKGO),$(GINKGO_DIR),github.com/onsi/ginkgo/ginkgo@${GINKGO_VERSION})
 
 # go-install-tool will delete old package $2, then 'go install' any package $3 to $1.
 define go-install-tool
@@ -304,7 +312,7 @@ endef
 
 .PHONY: build-tools
 build-tools: ## Download & build all the tools locally if necessary.
-	$(MAKE) kustomize controller-gen envtest opm operator-sdk
+	$(MAKE) kustomize controller-gen envtest ginkgo opm operator-sdk
 
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
