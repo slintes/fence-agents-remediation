@@ -46,9 +46,9 @@ var (
 // FenceAgentsRemediationReconciler reconciles a FenceAgentsRemediation object
 type FenceAgentsRemediationReconciler struct {
 	client.Client
-	Log          logr.Logger
-	Scheme       *runtime.Scheme
-	ExecutorHook func(*corev1.Pod) (cli.Executer, error) // for testing the cli command
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Executor cli.Executer
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -111,13 +111,6 @@ func (r *FenceAgentsRemediationReconciler) Reconcile(ctx context.Context, req ct
 		return emptyResult, err
 	}
 
-	// Build CLI executer for FAR's pod
-	r.Log.Info("Build CLI executer for FAR's pod")
-	ex, err := r.ExecutorHook(pod)
-	if err != nil {
-		return emptyResult, err
-	}
-
 	//TODO: Check that FA is excutable? run cli.IsExecuteable
 
 	r.Log.Info("Create and execute the fence agent", "Fence Agent", farTemplate.Spec.Agent)
@@ -127,7 +120,7 @@ func (r *FenceAgentsRemediationReconciler) Reconcile(ctx context.Context, req ct
 	}
 	cmd := append([]string{farTemplate.Spec.Agent}, faParams...)
 	// The Fence Agent is excutable and the parameters are valid but we don't know about their values
-	if _, _, err := ex.Execute(cmd); err != nil {
+	if _, _, err := r.Executor.Execute(pod, cmd); err != nil {
 		//TODO: better seperation between errors from wrong shared parameters values and wrong node parameters values
 		return emptyResult, err
 	}

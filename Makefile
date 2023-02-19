@@ -163,8 +163,8 @@ go-verify: go-tidy go-vendor # Run go mod verify - verify dependencies have expe
 	go mod verify
 
 .PHONY: test
-test: manifests generate go-verify fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -i --bin-dir $(LOCALBIN) -p path)"  $(GINKGO) -v -r --keepGoing -requireSuite -coverprofile cover.out
+test: manifests generate go-verify fmt vet envtest ginkgo ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(ENVTEST_DIR)/$(ENVTEST_VERSION) -p path)"  $(GINKGO) -v -r --keepGoing -requireSuite -coverprofile cover.out
 
 ##@ Build
 

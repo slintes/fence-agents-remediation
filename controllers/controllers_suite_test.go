@@ -23,7 +23,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +33,6 @@ import (
 
 	//+kubebuilder:scaffold:imports ## https://github.com/kubernetes-sigs/kubebuilder/issues/1487 ?
 	fenceagentsv1alpha1 "github.com/medik8s/fence-agents-remediation/api/v1alpha1"
-	"github.com/medik8s/fence-agents-remediation/pkg/cli"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -77,10 +75,10 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).NotTo(BeNil())
 
 	err = (&FenceAgentsRemediationReconciler{
-		Client:       k8sClient,
-		Log:          k8sManager.GetLogger().WithName("test far reconciler"),
-		Scheme:       k8sManager.GetScheme(),
-		ExecutorHook: func(pod *corev1.Pod) (cli.Executer, error) { return mockNewExecuter(pod) },
+		Client:   k8sClient,
+		Log:      k8sManager.GetLogger().WithName("test far reconciler"),
+		Scheme:   k8sManager.GetScheme(),
+		Executor: newMockExecuter(),
 	}).SetupWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 

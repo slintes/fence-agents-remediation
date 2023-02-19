@@ -65,7 +65,7 @@ var _ = Describe("FAR Controller", func() {
 
 	Context("Reconcilie", func() {
 		//Scenarios
-		nodeName :=  "master-0"
+		nodeName := "master-0"
 		testFields := []string{"--username", "--password", "--action", "--ip", "--lanplus", "--ipport"}
 		testValues := []string{"adminn", "password", "reboot", "192.168.111.1", ""}
 		nodeFeilds := []string{"master-0", "master-1", "master-2", "worker-0", "worker-1", "worker-2"}
@@ -104,7 +104,6 @@ var _ = Describe("FAR Controller", func() {
 	})
 })
 
-
 // buildFARTemplate from string to arrays to two string maps (key-value manner)
 func buildFARTemplate(fields []string, values []string, nodeFields []string, nodeValues []string, node string) (map[v1alpha1.ParameterName]string, map[v1alpha1.ParameterName]map[v1alpha1.NodeName]string) {
 	testShareParam := make(map[v1alpha1.ParameterName]string)
@@ -134,7 +133,7 @@ func indexOf(element string, data []string) int {
 			return k
 		}
 	}
-	return -1 
+	return -1
 }
 
 // newFenceAgentsRemediationTemplate assign the input to the FenceAgentsRemediationTemplate's Spec
@@ -150,7 +149,7 @@ func newFenceAgentsRemediationTemplate(agent string, sharedparameters map[v1alph
 }
 
 // buildFarPod builds a dummy pod with FAR label and namespace
-func buildFarPod() * corev1.Pod {
+func buildFarPod() *corev1.Pod {
 	fenceAgentsPod := &corev1.Pod{}
 	fenceAgentsPod.Labels = faPodLabels
 	fenceAgentsPod.Name = "mock-fence-agents"
@@ -199,16 +198,16 @@ type mockExecuter struct {
 }
 
 // mockNewExecuter is a dummy function for testing
-func mockNewExecuter(pod *corev1.Pod) (cli.Executer, error) {
+func newMockExecuter() cli.Executer {
 	mockExpected := []string{"mockExecuter"}
 	mockE := mockExecuter{expected: mockExpected}
-	return &mockE, nil
+	return &mockE
 }
+
 // Execute is a dummy function for testing which stores the production command in the global variable
-func (e *mockExecuter) Execute(command []string) (stdout string, stderr string, err error) {
-	//store the executed command for testing it's validaty
+func (e *mockExecuter) Execute(_ *corev1.Pod, command []string) (stdout string, stderr string, err error) {
+	//store the executed command for testing its validaty
 	executedCommand = command
 	// e.expected = command
 	return "", "", nil
 }
-
