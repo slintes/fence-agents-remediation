@@ -5,8 +5,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/medik8s/fence-agents-remediation/pkg/validation"
 )
 
 var _ = Describe("FenceAgentsRemediationTemplate Validation", func() {
@@ -26,7 +24,7 @@ var _ = Describe("FenceAgentsRemediationTemplate Validation", func() {
 				farTemplate := getTestFARTemplate(invalidAgentName)
 				_, err := farTemplate.ValidateCreate()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(validation.ErrorNotFoundAgent, invalidAgentName))
+				Expect(err.Error()).To(ContainSubstring("Unsupported fence agent: %s", invalidAgentName))
 			})
 		})
 	})
@@ -47,7 +45,7 @@ var _ = Describe("FenceAgentsRemediationTemplate Validation", func() {
 				farTemplate := getTestFARTemplate(invalidAgentName)
 				_, err := farTemplate.ValidateUpdate(oldFARTemplate)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(validation.ErrorNotFoundAgent, invalidAgentName))
+				Expect(err.Error()).To(ContainSubstring("Unsupported fence agent: %s", invalidAgentName))
 			})
 		})
 	})
